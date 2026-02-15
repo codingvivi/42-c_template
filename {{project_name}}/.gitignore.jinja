@@ -1,0 +1,17 @@
+# Build
+.cache/
+bin/
+obj/
+
+{%- if use_premake %}
+Makefile
+*.make
+{%- endif %}
+{%- if use_clangd %}
+compile_commands.json
+{%- endif %}
+# log
+*.log
+vgcore.*
+
+ext/reference

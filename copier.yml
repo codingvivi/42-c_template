@@ -1,0 +1,24 @@
+project_name:
+  type: str
+
+project_type:
+  type: str
+
+use_clangd:
+  type: bool
+  default: true
+
+use_clang_format:
+  type: bool
+  default: true
+
+use_premake:
+  type: bool
+  default: true
+
+_exclude:
+  - "{% if not use_premake %}premake5.lua{% endif %}"
+  - "{% if not use_premake %}.styllua.toml{% endif %}"
+  - "{% if not use_premake %}.luarc.json{% endif %}"
+  - "{% if not use_clangd %}**/.clang-tidy{% endif %}"
+  - "{% if not use_clang_format %}**/.clang-format-ignore{% endif %}"
