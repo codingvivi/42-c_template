@@ -16,6 +16,8 @@ use_premake:
   type: bool
   default: true
 
+_subdirectory: template
+
 _exclude:
   - "{% if not use_premake %}premake5.lua{% endif %}"
   - "{% if not use_premake %}.styllua.toml{% endif %}"
