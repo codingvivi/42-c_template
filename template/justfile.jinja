@@ -3,6 +3,7 @@ build *args:
     premake5 gmake
 {%- endif %}
     make {% raw %}{{args}}{% endraw %}
+    rsync -av --include-from='.turnin-include' --exclude='*' . turnin/
 
-turnin:
+turnin-sync:
     rsync -av --include-from='.turnin-include' --exclude='*' . turnin/
