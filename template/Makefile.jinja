@@ -1,0 +1,123 @@
+{% if project_type == 'ConsoleApp' -%}
+NAME = {{project_name}}
+{% else -%}
+NAME = {{project_name}}.a
+{% endif -%}
+TEST_NAME = runner
+
+.DEFAULT_GOAL := all
+
+CC         = cc
+CFLAGS     = -Wall -Wextra -Werror -fPIE
+TEST_CFLAGS = $(CFLAGS)
+INCLUDES   = -I./src
+
+{% if project_type != 'ConsoleApp' -%}
+AR = ar -rcs
+
+{% endif -%}
+RM = rm -rf
+
+
+{% if project_type == 'ConsoleApp' -%}
+FILES = main
+{% else -%}
+FILES = {{project_name}}
+{% endif %}
+
+ROOT_DIR  := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+# code
+SRC_DIR   := $(ROOT_DIR)/src
+TEST_OBJ_DIR := $(OBJ_DIR)/test
+
+# obj files
+BUILD_DIR := $(ROOT_DIR)/build
+OBJ_DIR     := $(BUILD_DIR)/obj
+SRC_OBJ_DIR := $(OBJ_DIR)/src
+
+# build results
+BIN_DIR      := $(BUILD_DIR)/bin
+SRC_BIN_DIR  := $(BIN_DIR)/src
+TEST_BIN_DIR := $(BIN_DIR)/test
+TEST_SRC_DIR := $(ROOT_DIR)/test
+
+TEST_FILES = main
+
+SRCS = $(FILES:%=$(SRC_DIR)/%.c)
+OBJS = $(FILES:%=$(SRC_OBJ_DIR)/%.o)
+
+TEST_SRCS = $(TEST_FILES:%=$(TEST_SRC_DIR)/%.c)
+TEST_OBJS = $(TEST_FILES:%=$(TEST_OBJ_DIR)/%.o)
+
+# build
+all: $(NAME)
+
+{% if project_type == 'ConsoleApp' -%}
+# link objects into executable
+$(NAME): $(OBJS) | $(SRC_BIN_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(SRC_BIN_DIR)/$(NAME)
+{% else -%}
+# archive objects into static library
+$(NAME): $(OBJS)
+	$(AR) $(NAME) $(OBJS)
+{% endif %}
+# compile source files to objects
+$(SRC_OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(SRC_OBJ_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# create source obj directory
+$(SRC_OBJ_DIR): | $(BUILD_DIR)
+	mkdir -p $(SRC_OBJ_DIR)
+
+# create test obj directory
+$(TEST_OBJ_DIR): | $(BUILD_DIR)
+	mkdir -p $(TEST_OBJ_DIR)
+
+# create src bin directory
+$(SRC_BIN_DIR): | $(BUILD_DIR)
+	mkdir -p $(SRC_BIN_DIR)
+
+# create test bin directory
+$(TEST_BIN_DIR): | $(BUILD_DIR)
+	mkdir -p $(TEST_BIN_DIR)
+
+
+# create build directory
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+# create src directory
+$(SRC_DIR):
+	mkdir -p $(SRC_DIR)
+
+# build and run tests
+test: $(TEST_NAME)
+
+# link test runner
+$(TEST_NAME): $(NAME) $(TEST_OBJS) | $(TEST_BIN_DIR)
+{% if project_type == 'ConsoleApp' -%}
+	$(CC) $(CFLAGS) $(TEST_OBJS) -o $(TEST_BIN_DIR)/$(TEST_NAME)
+{% else -%}
+	$(CC) $(CFLAGS) $(TEST_OBJS) $(NAME) -o $(TEST_BIN_DIR)/$(TEST_NAME)
+{% endif %}
+# compile test files to objects
+$(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.c | $(TEST_OBJ_DIR)
+	$(CC) $(TEST_CFLAGS) $(INCLUDES) -c $< -o $@
+
+# remove object files
+clean:
+	$(RM) $(OBJ_DIR)
+
+# remove all build artifacts
+fclean: clean
+{% if project_type == 'ConsoleApp' -%}
+	$(RM) $(SRC_BIN_DIR)/$(NAME) $(TEST_BIN_DIR)/$(TEST_NAME)
+{% else -%}
+	$(RM) $(NAME) $(TEST_BIN_DIR)/$(TEST_NAME)
+{% endif -%}
+
+# full rebuild
+re: fclean all
+
+.PHONY: all test clean fclean re

@@ -12,15 +12,30 @@ use_clang_format:
   type: bool
   default: true
 
+use_just:
+  type: bool
+  default: false
+
 use_premake:
   type: bool
+  default: false
+
+turin_make:
+  type: bool
   default: true
+
+use_meson:
+  type: bool
+  default: false
 
 _subdirectory: template
 
 _exclude:
+  - "{% if not use_just %}justfile{% endif %}"
   - "{% if not use_premake %}premake5.lua{% endif %}"
   - "{% if not use_premake %}.styllua.toml{% endif %}"
   - "{% if not use_premake %}.luarc.json{% endif %}"
+  - "{% if use_premake or not turin_make %}Makefile.jinja{% endif %}"
+  - "{% if not use_meson %}meson.build{% endif %}"
   - "{% if not use_clangd %}**/.clang-tidy{% endif %}"
   - "{% if not use_clang_format %}**/.clang-format-ignore{% endif %}"

@@ -1,0 +1,40 @@
+project('{{project_name}}', 'c',
+  default_options : [
+    'warning_level=3',
+    'werror=true',
+  ])
+
+cc = meson.get_compiler('c')
+
+inc = include_directories('src')
+
+sources = files(
+  # Add your source files here, e.g.:
+  # 'src/turnin/main.c',
+)
+
+{% if project_type == 'StaticLib' -%}
+lib = static_library('{{project_name}}', sources,
+  include_directories : inc,
+)
+
+executable('test_runner',
+  files('tests/main.c'),
+  include_directories : inc,
+  link_with : lib,
+)
+{% elif project_type == 'SharedLib' -%}
+lib = shared_library('{{project_name}}', sources,
+  include_directories : inc,
+)
+
+executable('test_runner',
+  files('tests/main.c'),
+  include_directories : inc,
+  link_with : lib,
+)
+{% else -%}
+executable('{{project_name}}', sources,
+  include_directories : inc,
+)
+{% endif -%}
