@@ -3,7 +3,7 @@
 bin/
 obj/
 
-{%- if use_premake %}
+{%- if build_system == 'premake' %}
 Makefile
 *.make
 {%- endif %}

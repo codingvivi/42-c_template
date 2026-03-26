@@ -25,22 +25,19 @@ use_libft:
   type: bool
   default: false
 
-# Build systems
-turin_make:
-  type: bool
-  default: true
+# Build system
+build_system:
+  type: str
+  choices:
+    - makefile
+    - premake
+    - meson
+  default: makefile
 
 submit_makefile:
   type: bool
   default: true
-
-use_premake:
-  type: bool
-  default: false
-
-use_meson:
-  type: bool
-  default: false
+  when: "{{ build_system == 'makefile' }}"
 
 use_just:
   type: bool
@@ -64,10 +61,10 @@ _subdirectory: template
 
 _exclude:
   - "{% if not use_just %}justfile{% endif %}"
-  - "{% if not use_premake %}premake5.lua{% endif %}"
-  - "{% if not use_premake %}.styllua.toml{% endif %}"
-  - "{% if not use_premake %}.luarc.json{% endif %}"
-  - "{% if use_premake or not turin_make %}Makefile.jinja{% endif %}"
-  - "{% if not use_meson %}meson.build{% endif %}"
+  - "{% if build_system != 'premake' %}premake5.lua{% endif %}"
+  - "{% if build_system != 'premake' %}.styllua.toml{% endif %}"
+  - "{% if build_system != 'premake' %}.luarc.json{% endif %}"
+  - "{% if build_system != 'makefile' %}Makefile.jinja{% endif %}"
+  - "{% if build_system != 'meson' %}meson.build{% endif %}"
   - "{% if not use_clangd %}**/.clang-tidy{% endif %}"
   - "{% if not use_clang_format %}**/.clang-format-ignore{% endif %}"

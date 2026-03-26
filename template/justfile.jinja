@@ -1,14 +1,14 @@
 build *args:
-{%- if use_meson %}
+{%- if build_system == 'meson' %}
     meson compile -C builddir {% raw %}{{args}}{% endraw %}
-{%- elif use_premake %}
+{%- elif build_system == 'premake' %}
     premake5 gmake
     make {% raw %}{{args}}{% endraw %}
 {%- else %}
     make {% raw %}{{args}}{% endraw %}
 {%- endif %}
     rsync -av --include-from='.turnin-include' --exclude='*' . turnin/
-{% if use_meson %}
+{% if build_system == 'meson' %}
 setup:
     meson setup builddir
 
