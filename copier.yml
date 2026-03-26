@@ -1,9 +1,52 @@
+# Project
 project_name:
   type: str
 
 project_type:
   type: str
+  choices:
+    - ConsoleApp
+    - WindowedApp
+    - SharedLib
+    - StaticLib
+    - Makefile
+    - Utility
+    - None
+    - Packaging
+    - SharedItems
+  default: ConsoleApp
 
+flat_repo:
+  type: bool
+  default: true
+
+# Dependencies
+use_libft:
+  type: bool
+  default: false
+
+# Build systems
+turin_make:
+  type: bool
+  default: true
+
+submit_makefile:
+  type: bool
+  default: true
+
+use_premake:
+  type: bool
+  default: false
+
+use_meson:
+  type: bool
+  default: false
+
+use_just:
+  type: bool
+  default: false
+
+# Tooling
 use_clangd:
   type: bool
   default: true
@@ -12,37 +55,10 @@ use_clang_format:
   type: bool
   default: true
 
-use_just:
-  type: bool
-  default: false
-
-use_premake:
-  type: bool
-  default: false
-
-turin_make:
+# Deployment
+copy_build_to_root:
   type: bool
   default: true
-
-flat_repo:
-  type: bool
-  default: true
-
-copy_root:
-  type: bool
-  default: true
-
-use_libft:
-  type: bool
-  default: false
-
-submit_makefile:
-  type: bool
-  default: true
-
-use_meson:
-  type: bool
-  default: false
 
 _subdirectory: template
 

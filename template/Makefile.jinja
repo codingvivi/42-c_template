@@ -89,7 +89,7 @@ all: $(NAME){% if use_libft %} | $(EXTERNAL_DIR)/libft{% endif %}
 {% else -%}
 all: $(LIB){% if use_libft %} | $(EXTERNAL_DIR)/libft{% endif %}
 {% endif -%}
-{% if copy_root -%}
+{% if copy_build_to_root -%}
 ifeq ($(TURNIN_RUN),true)
 {% if project_type == 'ConsoleApp' -%}
 	cp $(SRC_BIN_DIR)/$(NAME) $(ROOT_DIR)/$(NAME)
@@ -188,7 +188,7 @@ dist: | $(DIST_DIR)
 	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
 	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)
 	cp $(DIST_FILES) $(DIST_DIR)/$(RELEASE_BASE)/
-{% if submit_makefile and copy_root -%}
+{% if submit_makefile and copy_build_to_root -%}
 	sed -i '1i TURNIN_RUN = true' $(DIST_DIR)/$(RELEASE_BASE)/Makefile
 {% endif -%}
 {% if use_libft -%}
@@ -202,7 +202,7 @@ dist: | $(DIST_DIR)
 	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
 	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)
 	cd $(ROOT_DIR) && cp --parents $(DIST_FILES) $(DIST_DIR)/$(RELEASE_BASE)/
-{% if submit_makefile and copy_root -%}
+{% if submit_makefile and copy_build_to_root -%}
 	sed -i '1i TURNIN_RUN = true' $(DIST_DIR)/$(RELEASE_BASE)/Makefile
 {% endif -%}
 {% if use_libft -%}
@@ -239,7 +239,7 @@ fclean: clean
 {% else -%}
 	$(RM) $(LIB) $(TEST_BIN_DIR)/$(TEST_NAME)
 {% endif -%}
-{% if copy_root -%}
+{% if copy_build_to_root -%}
 	$(RM) $(ROOT_DIR)/$(NAME)
 {% endif -%}
 
