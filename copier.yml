@@ -28,6 +28,14 @@ flat_repo:
   type: bool
   default: true
 
+copy_root:
+  type: bool
+  default: true
+
+use_libft:
+  type: bool
+  default: false
+
 submit_makefile:
   type: bool
   default: true
