@@ -18,6 +18,10 @@ AR = ar -rcs
 {% endif -%}
 RM = rm -rf
 
+RELEASE_TAG  ?=
+RELEASE_NAME = {{project_name}}_turnin_$(RELEASE_TAG).tar.gz
+RELEASE_BASE = $(basename $(basename $(RELEASE_NAME)))
+
 
 {% if project_type == 'ConsoleApp' -%}
 FILES = main
@@ -42,6 +46,9 @@ SRC_BIN_DIR  := $(BIN_DIR)/src
 TEST_BIN_DIR := $(BIN_DIR)/test
 TEST_SRC_DIR := $(ROOT_DIR)/test
 
+# dist
+DIST_DIR := $(BUILD_DIR)/dist
+
 TEST_FILES = main
 
 SRCS = $(FILES:%=$(SRC_DIR)/%.c)
@@ -49,6 +56,12 @@ OBJS = $(FILES:%=$(SRC_OBJ_DIR)/%.o)
 
 TEST_SRCS = $(TEST_FILES:%=$(TEST_SRC_DIR)/%.c)
 TEST_OBJS = $(TEST_FILES:%=$(TEST_OBJ_DIR)/%.o)
+
+{% if flat_repo -%}
+DIST_FILES = {% if submit_makefile %}Makefile {% endif %}README.md $(SRCS)
+{% else -%}
+DIST_FILES = {% if submit_makefile %}Makefile {% endif %}README.md $(FILES:%=src/%.c)
+{% endif -%}
 
 # build
 all: $(NAME)
@@ -65,6 +78,12 @@ $(NAME): $(OBJS)
 # compile source files to objects
 $(SRC_OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(SRC_OBJ_DIR)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+{% if flat_repo -%}
+# move flat source files into src/ if they exist in root
+$(SRC_DIR)/%.c: %.c | $(SRC_DIR)
+	mv $< $@
+{% endif -%}
 
 # create source obj directory
 $(SRC_OBJ_DIR): | $(BUILD_DIR)
@@ -90,6 +109,31 @@ $(BUILD_DIR):
 # create src directory
 $(SRC_DIR):
 	mkdir -p $(SRC_DIR)
+
+# create dist directory
+$(DIST_DIR): | $(BUILD_DIR)
+	mkdir -p $(DIST_DIR)
+
+{% if flat_repo -%}
+# initialize project structure from flat layout
+init: $(SRCS)
+
+# create flat distribution tarball for turnin
+dist: | $(DIST_DIR)
+	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
+	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)
+	cp $(DIST_FILES) $(DIST_DIR)/$(RELEASE_BASE)/
+	tar -czf $(DIST_DIR)/$(RELEASE_NAME) -C $(DIST_DIR) $(RELEASE_BASE)
+	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
+{% else -%}
+# create distribution tarball
+dist: | $(DIST_DIR)
+	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
+	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)
+	cd $(ROOT_DIR) && cp --parents $(DIST_FILES) $(DIST_DIR)/$(RELEASE_BASE)/
+	tar -czf $(DIST_DIR)/$(RELEASE_NAME) -C $(DIST_DIR) $(RELEASE_BASE)
+	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
+{% endif -%}
 
 # build and run tests
 test: $(TEST_NAME)
@@ -120,4 +164,8 @@ fclean: clean
 # full rebuild
 re: fclean all
 
-.PHONY: all test clean fclean re
+{% if flat_repo -%}
+.PHONY: all init dist test clean fclean re
+{% else -%}
+.PHONY: all dist test clean fclean re
+{% endif -%}

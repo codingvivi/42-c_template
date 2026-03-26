@@ -24,6 +24,14 @@ turin_make:
   type: bool
   default: true
 
+flat_repo:
+  type: bool
+  default: true
+
+submit_makefile:
+  type: bool
+  default: true
+
 use_meson:
   type: bool
   default: false
