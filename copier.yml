@@ -60,6 +60,8 @@ copy_build_to_root:
 _subdirectory: template
 
 _tasks:
+  - command: "git init"
+    when: "{{ use_libft }}"
   - command: "git submodule add https://github.com/codingvivi/42-libft external/lib/libft"
     when: "{{ use_libft }}"
 
