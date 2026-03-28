@@ -1,17 +1,25 @@
-# Build
+# Build & gen
 .cache/
-bin/
-obj/
-
+build/
+*.a
+*.o
+*.out
 {%- if build_system == 'premake' %}
 Makefile
 *.make
 {%- endif %}
 {%- if use_clangd %}
+CMakeLists.txt
 compile_commands.json
 {%- endif %}
-# log
+
+# trash
+*.bar
+._* 
 *.log
 vgcore.*
+temp/
 
-ext/reference
+# not mine
+docs/42
+
