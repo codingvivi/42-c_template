@@ -59,6 +59,10 @@ copy_build_to_root:
 
 _subdirectory: template
 
+_tasks:
+  - command: "git submodule add https://github.com/codingvivi/42-libft external/lib/libft"
+    when: "{{ use_libft }}"
+
 _exclude:
   - "{% if not use_just %}justfile{% endif %}"
   - "{% if build_system != 'premake' %}premake5.lua{% endif %}"

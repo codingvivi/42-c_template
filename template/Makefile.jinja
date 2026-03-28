@@ -10,7 +10,7 @@ TEST_NAME = runner
 CC         = cc
 CFLAGS     = -Wall -Wextra -Werror -fPIE
 TEST_CFLAGS = $(CFLAGS)
-INCLUDES   = -I./src -I./include{% if use_libft %} -I$(LIBFT_DIR){% endif %}
+INCLUDES   = -I./src -I./include{% if use_libft %} -I$(LIBFT_INCLUDE_DIR){% endif %}
 
 {% if project_type != 'ConsoleApp' -%}
 AR = ar -rcs
@@ -29,17 +29,16 @@ FILES = main
 FILES = {{project_name}}
 {% endif %}
 
-ROOT_DIR  := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-
 # code
-SRC_DIR     := $(ROOT_DIR)/src
-INCLUDE_DIR := $(ROOT_DIR)/include
-TEST_OBJ_DIR := $(OBJ_DIR)/test
+SRC_DIR     := src
+INCLUDE_DIR := include
+TEST_SRC_DIR := test
 
-# obj files
-BUILD_DIR := $(ROOT_DIR)/build
+# build output
+BUILD_DIR   := build
 OBJ_DIR     := $(BUILD_DIR)/obj
 SRC_OBJ_DIR := $(OBJ_DIR)/src
+TEST_OBJ_DIR := $(OBJ_DIR)/test
 
 # build results
 BIN_DIR      := $(BUILD_DIR)/bin
@@ -48,13 +47,13 @@ TEST_BIN_DIR := $(BIN_DIR)/test
 {% if project_type != 'ConsoleApp' -%}
 LIB_DIR      := $(BUILD_DIR)/lib
 {% endif -%}
-TEST_SRC_DIR := $(ROOT_DIR)/test
 
 {% if use_libft -%}
 # external libraries
-EXTERNAL_DIR := $(ROOT_DIR)/external
-LIBFT_DIR    := $(EXTERNAL_DIR)/libft
-LIBFT        := $(LIBFT_DIR)/libft.a
+EXTERNAL_DIR     := external
+LIBFT_DIR        := $(EXTERNAL_DIR)/lib/libft
+LIBFT_INCLUDE_DIR := $(LIBFT_DIR)/include
+LIBFT            := $(LIBFT_DIR)/build/lib/libft.a
 
 {% endif -%}
 # dist
@@ -85,27 +84,34 @@ DIST_FILES = {% if submit_makefile %}Makefile {% endif %}README.md $(FILES:%=src
 
 # build
 {% if project_type == 'ConsoleApp' -%}
-all: $(NAME){% if use_libft %} | $(EXTERNAL_DIR)/libft{% endif %}
+all: {% if flat_repo or use_libft %}init {% endif %}$(NAME){% if use_libft %} | $(LIBFT_DIR){% endif %}
+
 {% else -%}
-all: $(LIB){% if use_libft %} | $(EXTERNAL_DIR)/libft{% endif %}
+all: {% if flat_repo or use_libft %}init {% endif %}$(LIB){% if use_libft %} | $(LIBFT_DIR){% endif %}
+
 {% endif -%}
 {% if copy_build_to_root -%}
 ifeq ($(TURNIN_RUN),true)
 {% if project_type == 'ConsoleApp' -%}
-	cp $(SRC_BIN_DIR)/$(NAME) $(ROOT_DIR)/$(NAME)
+	cp $(SRC_BIN_DIR)/$(NAME) $(NAME)
 {% else -%}
-	cp $(LIB) $(ROOT_DIR)/$(NAME)
+	cp $(LIB) $(NAME)
+	cp $(HDRS) .
 {% endif -%}
 endif
 {% endif -%}
 
+{% if project_type != 'ConsoleApp' -%}
+$(NAME): all
+
+{% endif -%}
 {% if project_type == 'ConsoleApp' -%}
 # link objects into executable
-$(NAME): $(OBJS) | $(SRC_BIN_DIR)
-	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS) -o $(SRC_BIN_DIR)/$(NAME)
+$(NAME): $(OBJS){% if use_libft %} $(LIBFT){% endif %} | $(SRC_BIN_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJS){% if use_libft %} $(LIBFT){% endif %} -o $(SRC_BIN_DIR)/$(NAME)
 {% else -%}
 # archive objects into static library
-$(LIB): $(OBJS) | $(LIB_DIR)
+$(LIB): $(OBJS){% if use_libft %} $(LIBFT){% endif %} | $(LIB_DIR)
 	$(AR) $@ $(OBJS)
 {% endif %}
 # compile source files to objects
@@ -123,12 +129,13 @@ $(INCLUDE_DIR)/%.h: %.h | $(INCLUDE_DIR)
 {% endif -%}
 
 {% if use_libft -%}
-# move libft into external/ if it exists in root
-$(EXTERNAL_DIR)/libft: libft | $(EXTERNAL_DIR)
+# move libft into external/lib/ if it exists in root
+$(LIBFT_DIR): libft | $(EXTERNAL_DIR)
+	mkdir -p $(EXTERNAL_DIR)/lib
 	mv $< $@
 
 # build libft
-$(LIBFT): | $(EXTERNAL_DIR)/libft
+$(LIBFT): | $(LIBFT_DIR)
 	$(MAKE) -C $(LIBFT_DIR)
 
 {% endif -%}
@@ -179,39 +186,33 @@ $(DIST_DIR): | $(BUILD_DIR)
 
 {% if flat_repo or use_libft -%}
 # initialize project structure from flat layout
-init: {% if flat_repo %}$(SRCS) $(HDRS) {% endif %}{% if use_libft %}$(EXTERNAL_DIR)/libft{% endif %}
+init: {% if flat_repo %}$(SRCS) $(HDRS) {% endif %}{% if use_libft %}$(LIBFT_DIR){% endif %}
 
 {% endif -%}
+# create flat distribution environment for turnin
+stage: | $(DIST_DIR)
+	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
+	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)
 {% if flat_repo -%}
-# create flat distribution tarball for turnin
-dist: | $(DIST_DIR)
-	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
-	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)
 	cp $(DIST_FILES) $(DIST_DIR)/$(RELEASE_BASE)/
-{% if submit_makefile and copy_build_to_root -%}
-	sed -i '1i TURNIN_RUN = true' $(DIST_DIR)/$(RELEASE_BASE)/Makefile
-{% endif -%}
-{% if use_libft -%}
-	cp -r $(LIBFT_DIR) $(DIST_DIR)/$(RELEASE_BASE)/libft
-{% endif -%}
-	tar -czf $(DIST_DIR)/$(RELEASE_NAME) -C $(DIST_DIR) $(RELEASE_BASE)
-	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
 {% else -%}
-# create distribution tarball
-dist: | $(DIST_DIR)
-	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
-	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)
-	cd $(ROOT_DIR) && cp --parents $(DIST_FILES) $(DIST_DIR)/$(RELEASE_BASE)/
+	cp --parents $(DIST_FILES) $(DIST_DIR)/$(RELEASE_BASE)/
+{% endif -%}
 {% if submit_makefile and copy_build_to_root -%}
 	sed -i '1i TURNIN_RUN = true' $(DIST_DIR)/$(RELEASE_BASE)/Makefile
 {% endif -%}
 {% if use_libft -%}
+{% if flat_repo -%}
+	cp -r $(LIBFT_DIR) $(DIST_DIR)/$(RELEASE_BASE)/libft
+{% else -%}
 	mkdir -p $(DIST_DIR)/$(RELEASE_BASE)/external
 	cp -r $(LIBFT_DIR) $(DIST_DIR)/$(RELEASE_BASE)/external/libft
 {% endif -%}
-	tar -czf $(DIST_DIR)/$(RELEASE_NAME) -C $(DIST_DIR) $(RELEASE_BASE)
-	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
 {% endif -%}
+
+# create a distribution tarball with the submission files
+dist: stage
+	tar -czf $(DIST_DIR)/$(RELEASE_NAME) -C $(DIST_DIR) $(RELEASE_BASE)
 
 # build and run tests
 test: $(TEST_NAME)
@@ -233,21 +234,47 @@ clean:
 	$(RM) $(OBJ_DIR)
 
 # remove all build artifacts
-fclean: clean
+hclean: clean
 {% if project_type == 'ConsoleApp' -%}
 	$(RM) $(SRC_BIN_DIR)/$(NAME) $(TEST_BIN_DIR)/$(TEST_NAME)
 {% else -%}
 	$(RM) $(LIB) $(TEST_BIN_DIR)/$(TEST_NAME)
 {% endif -%}
+{% if use_libft -%}
+	$(MAKE) -C $(LIBFT_DIR) hclean
+{% endif -%}
 {% if copy_build_to_root -%}
-	$(RM) $(ROOT_DIR)/$(NAME)
+	$(RM) $(NAME)
+{% endif -%}
+	$(RM) $(DIST_DIR)/$(RELEASE_BASE)
+
+{% if flat_repo or use_libft -%}
+# flatten back to root (undo init)
+fclean: hclean
+{% if flat_repo -%}
+	-mv $(SRC_DIR)/*.c .
+	-mv $(INCLUDE_DIR)/*.h .
+{% endif -%}
+{% if use_libft -%}
+	-mv $(LIBFT_DIR) libft
+{% endif -%}
+ifeq ($(TURNIN_RUN),true)
+{% if flat_repo -%}
+	-rmdir $(SRC_DIR) $(INCLUDE_DIR) 2>/dev/null; true
+{% endif -%}
+{% if use_libft -%}
+	-$(RM) $(EXTERNAL_DIR)
+{% endif -%}
+endif
+{% else -%}
+fclean: hclean
 {% endif -%}
 
 # full rebuild
-re: fclean all
+re: hclean all
 
 {% if flat_repo or use_libft -%}
-.PHONY: all init dist test clean fclean re
+.PHONY: all init stage dist test clean hclean fclean re
 {% else -%}
-.PHONY: all dist test clean fclean re
+.PHONY: all stage dist test clean hclean fclean re
 {% endif -%}
